@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Studio</title>
+<meta name="description" content="Browser-based tools that let you design, edit, and export media files.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root {
+  --bg: #ECEDEA;
+  --surface: #F7F8F5;
+  --fg: #121312;
+  --muted: #666863;
+  --line: #D2D4CF;
+  --guide: #0090CC;
+  --ui: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #111211;
+    --surface: #1A1B1A;
+    --fg: #ECEDEA;
+    --muted: #9C9E99;
+    --line: #2F312E;
+    --guide: #46BDF0;
+    color-scheme: dark;
+  }
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font: 15px/1.45 var(--ui);
+  -webkit-font-smoothing: antialiased;
+}
+.app {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding-block: calc(20px + env(safe-area-inset-top, 0px)) calc(56px + env(safe-area-inset-bottom, 0px));
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px 16px;
+  padding-bottom: 14px;
+  margin-bottom: 40px;
+  border-bottom: 1px solid var(--line);
+}
+.top h1 { margin: 0; font-size: 20px; font-weight: 500; letter-spacing: -0.01em; }
+.spec { margin: 0; font: 12px/1.4 var(--mono); color: var(--muted); }
+.intro { margin: 0 0 40px; max-width: 34ch; font-size: clamp(28px, 5vw, 44px); line-height: 1.1; font-weight: 400; letter-spacing: -0.02em; text-wrap: balance; }
+.group-title {
+  margin: 0 0 0;
+  font: 500 11px/1 var(--mono);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--line);
+}
+.tools { list-style: none; margin: 0; padding: 0; }
+.tool { border-bottom: 1px solid var(--line); }
+.tool a, .tool .soon {
+  display: grid;
+  grid-template-columns: 3ch minmax(0, 1fr) auto;
+  gap: 16px;
+  align-items: baseline;
+  padding: 20px 0;
+  color: inherit;
+  text-decoration: none;
+}
+.tool a:hover .name { text-decoration: underline; text-underline-offset: 4px; }
+.tool a:focus-visible { outline: 2px solid var(--guide); outline-offset: 2px; }
+.num { font: 12px/1 var(--mono); color: var(--muted); font-variant-numeric: tabular-nums; }
+.name { display: block; font-size: 22px; font-weight: 500; letter-spacing: -0.01em; }
+.desc { display: block; margin-top: 4px; color: var(--muted); font-size: 14px; max-width: 60ch; }
+.tag { font: 12px/1 var(--mono); color: var(--muted); white-space: nowrap; }
+.soon .name { color: var(--muted); }
+.foot { margin-top: 40px; font: 12px/1.5 var(--mono); color: var(--muted); max-width: 60ch; }
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <h1>Studio</h1>
+    <p class="spec">Tools run in your browser · nothing is uploaded</p>
+  </header>
+
+  <main>
+    <p class="intro">Design, edit, and export media files.</p>
+
+    <h2 class="group-title">Tools</h2>
+    <ul class="tools">
+      <li class="tool">
+        <a href="carousel/">
+          <span class="num">01</span>
+          <span>
+            <span class="name">Carousel</span>
+            <span class="desc">Turn a Markdown post into a 1080 × 1440 Instagram carousel: cover, pages, label, and footer.</span>
+          </span>
+          <span class="tag">Open →</span>
+        </a>
+      </li>
+      <li class="tool">
+        <div class="soon">
+          <span class="num">02</span>
+          <span>
+            <span class="name">Single post</span>
+            <span class="desc">Upload an image and set text on it.</span>
+          </span>
+          <span class="tag">Coming soon</span>
+        </div>
+      </li>
+    </ul>
+
+    <p class="foot">Images and text stay on your device. Settings are remembered in this browser only.</p>
+  </main>
+</div>
+</body>
+</html>

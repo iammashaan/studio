@@ -1,0 +1,1275 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Carousel · Studio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<style>
+:root{color-scheme:light}
+body{margin:0;padding:0}
+img{max-width:100%}
+[hidden]:not([hidden=until-found i]){display:none!important}
+
+/* Layout: a Swiss-grid workbench. The slides are the objects on the page; the controls sit quietly beside them. */
+:root {
+  --bg: #ECEDEA;
+  --surface: #F7F8F5;
+  --fg: #121312;
+  --muted: #666863;
+  --line: #D2D4CF;
+  --accent: #121312;
+  --accent-fg: #FFFFFF;
+  --guide: #0090CC;
+  --danger: #B3342A;
+  --scrim: rgba(18, 19, 18, 0.55);
+  --shadow: 0 1px 2px rgba(18, 19, 18, 0.08), 0 14px 36px rgba(18, 19, 18, 0.10);
+  --ui: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #111211;
+    --surface: #1A1B1A;
+    --fg: #ECEDEA;
+    --muted: #9C9E99;
+    --line: #2F312E;
+    --accent: #ECEDEA;
+    --accent-fg: #111211;
+    --guide: #46BDF0;
+    --danger: #FF7A6E;
+    --scrim: rgba(0, 0, 0, 0.72);
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 14px 36px rgba(0, 0, 0, 0.45);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #111211;
+  --surface: #1A1B1A;
+  --fg: #ECEDEA;
+  --muted: #9C9E99;
+  --line: #2F312E;
+  --accent: #ECEDEA;
+  --accent-fg: #111211;
+  --guide: #46BDF0;
+  --danger: #FF7A6E;
+  --scrim: rgba(0, 0, 0, 0.72);
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 14px 36px rgba(0, 0, 0, 0.45);
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font: 15px/1.45 var(--ui);
+  -webkit-font-smoothing: antialiased;
+}
+.app {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding-block: calc(20px + env(safe-area-inset-top, 0px)) calc(56px + env(safe-area-inset-bottom, 0px));
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+
+/* Header */
+.top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px 16px;
+  padding-bottom: 14px;
+  margin-bottom: 24px;
+  border-bottom: 1px solid var(--line);
+}
+.top h1 { margin: 0; font-size: 20px; font-weight: 500; letter-spacing: -0.01em; text-wrap: balance; }
+.top h1 a { color: var(--muted); text-decoration: none; }
+.top h1 a:hover { color: var(--fg); }
+.top h1 a:focus-visible { outline: 2px solid var(--guide); outline-offset: 2px; }
+.top h1 .sep { color: var(--line); margin: 0 6px; }
+.spec { margin: 0; font: 12px/1.4 var(--mono); color: var(--muted); font-variant-numeric: tabular-nums; }
+
+/* Two columns on wide screens, one stack on phones */
+.layout { display: grid; gap: 32px; }
+.stage { min-width: 0; display: flex; flex-direction: column; gap: 14px; }
+@media (min-width: 900px) {
+  .layout { grid-template-columns: minmax(0, 380px) minmax(0, 1fr); gap: 48px; align-items: start; }
+  .controls { grid-column: 1; grid-row: 1; }
+  .stage { grid-column: 2; grid-row: 1; position: sticky; top: calc(env(safe-area-inset-top, 0px) + 20px); }
+}
+
+/* Slide strip: swipe through like the carousel itself */
+.strip {
+  display: flex;
+  gap: 16px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  padding: 4px 4px 12px;
+  margin: -4px -4px 0;
+  -webkit-overflow-scrolling: touch;
+}
+.slide {
+  flex: 0 0 min(82%, 400px);
+  scroll-snap-align: start;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+@media (min-width: 900px) {
+  .slide { flex-basis: min(46%, calc((100vh - 280px) * 0.75)); }
+}
+.frame {
+  width: 100%;
+  max-width: 100%;
+  aspect-ratio: 3 / 4;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  outline: 1px solid var(--line);
+}
+.frame canvas { display: block; width: 100%; height: 100%; }
+.slide figcaption {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+}
+.slide-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.slide-name { font: 500 12px/1.2 var(--mono); font-variant-numeric: tabular-nums; }
+.slide-note { font: 12px/1.3 var(--mono); color: var(--muted); overflow-wrap: anywhere; }
+.slide-note.is-over { color: var(--danger); }
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.warn { margin: 0; font-size: 13px; color: var(--danger); }
+
+/* Buttons */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 20px;
+  font: 500 15px/1 var(--ui);
+  border-radius: 4px;
+  cursor: pointer;
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+.btn-primary { background: var(--accent); color: var(--accent-fg); }
+.btn:disabled { opacity: 0.6; cursor: progress; }
+.btn-ghost { background: transparent; color: var(--fg); border-color: var(--line); }
+.btn-ghost:hover { border-color: var(--muted); }
+.btn-small { min-height: 34px; padding: 0 12px; font-size: 13px; }
+.btn:focus-visible { outline: 2px solid var(--guide); outline-offset: 2px; }
+
+/* Switch */
+.switch { display: inline-flex; align-items: center; gap: 10px; cursor: pointer; font-size: 14px; }
+.switch input {
+  appearance: none;
+  -webkit-appearance: none;
+  flex-shrink: 0;
+  position: relative;
+  width: 38px;
+  height: 22px;
+  margin: 0;
+  border-radius: 11px;
+  background: var(--line);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.switch input::before {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--surface);
+  transition: transform 0.15s;
+}
+.switch input:checked { background: var(--fg); }
+.switch input:checked::before { transform: translateX(16px); background: var(--bg); }
+.switch input:focus-visible { outline: 2px solid var(--guide); outline-offset: 2px; }
+
+/* Controls */
+.controls { display: flex; flex-direction: column; gap: 36px; min-width: 0; }
+.group { display: flex; flex-direction: column; gap: 20px; }
+.group-title {
+  margin: 0;
+  font: 500 11px/1 var(--mono);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--line);
+}
+.field { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.field-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.field-head label, .field-label { font-weight: 500; font-size: 15px; }
+.meta { font: 12px/1.3 var(--mono); color: var(--muted); font-variant-numeric: tabular-nums; }
+input[type="text"], textarea {
+  width: 100%;
+  font: 16px/1.4 var(--ui);
+  color: var(--fg);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 10px 12px;
+}
+textarea { resize: vertical; }
+textarea.post { font: 15px/1.5 var(--mono); min-height: 260px; }
+input[type="text"]:focus, textarea:focus { outline: 2px solid var(--guide); outline-offset: -1px; border-color: transparent; }
+.status { margin: 0; font: 12px/1.3 var(--mono); color: var(--muted); font-variant-numeric: tabular-nums; }
+.status.is-over { color: var(--danger); }
+.note { margin: 0; font-size: 13px; line-height: 1.5; color: var(--muted); max-width: 60ch; }
+.note code { font: 12px var(--mono); color: var(--fg); }
+
+/* Segmented control */
+.seg { display: flex; border: 1px solid var(--line); border-radius: 4px; overflow: hidden; }
+.seg input { position: absolute; opacity: 0; width: 1px; height: 1px; pointer-events: none; }
+.seg label {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 9px 6px;
+  font-size: 13px;
+  line-height: 1.2;
+  text-align: center;
+  color: var(--muted);
+  cursor: pointer;
+  border-left: 1px solid var(--line);
+  user-select: none;
+}
+.seg label:first-of-type { border-left: 0; }
+.seg input:checked + label { background: var(--fg); color: var(--bg); }
+.seg input:focus-visible + label { outline: 2px solid var(--guide); outline-offset: -2px; }
+.seg .f-times { font-family: "Times New Roman", Times, serif; font-size: 15px; }
+.seg .f-sans { font-family: Helvetica, "Helvetica Neue", Arial, sans-serif; font-size: 15px; }
+.seg .f-light { font-weight: 300; }
+
+/* Sliders */
+input[type="range"] { width: 100%; margin: 0; height: 28px; accent-color: var(--fg); }
+input[type="range"]:focus-visible { outline: 2px solid var(--guide); outline-offset: 2px; }
+
+/* File picker row */
+.file-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-block: 10px;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+.file { font: 12px/1.3 var(--mono); color: var(--muted); overflow-wrap: anywhere; min-width: 0; }
+.file.is-loaded { color: var(--fg); }
+.row-actions { display: flex; gap: 8px; flex-shrink: 0; }
+.visually-hidden {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* Background swatches */
+.swatches { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 12px 8px; }
+.swatch input { position: absolute; opacity: 0; width: 1px; height: 1px; pointer-events: none; }
+.swatch label {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  font: 11px/1 var(--mono);
+  color: var(--muted);
+}
+.dot { display: block; width: 100%; max-width: 40px; aspect-ratio: 1; border-radius: 50%; border: 1px solid var(--line); }
+.swatch input:checked + label { color: var(--fg); }
+.swatch input:checked + label .dot { box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--fg); }
+.swatch input:focus-visible + label .dot { outline: 2px solid var(--guide); outline-offset: 4px; }
+
+/* Fallback save sheet */
+.sheet {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--scrim);
+  padding:
+    calc(16px + env(safe-area-inset-top, 0px))
+    max(16px, env(safe-area-inset-right, 0px))
+    calc(16px + env(safe-area-inset-bottom, 0px))
+    max(16px, env(safe-area-inset-left, 0px));
+}
+.sheet-card {
+  width: 100%;
+  max-width: 440px;
+  max-height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  background: var(--surface);
+  color: var(--fg);
+  border-radius: 6px;
+}
+.sheet-card p { margin: 0; font-size: 14px; }
+.sheet-imgs { display: flex; flex-direction: column; gap: 12px; overflow-y: auto; min-height: 0; }
+.sheet-imgs img { display: block; width: 100%; height: auto; -webkit-touch-callout: default; }
+
+/* Toast */
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+  z-index: 30;
+  max-width: calc(100% - 32px);
+  padding: 10px 16px;
+  font-size: 14px;
+  background: var(--fg);
+  color: var(--bg);
+  border-radius: 4px;
+  opacity: 0;
+  transform: translate(-50%, 8px);
+  pointer-events: none;
+  transition: opacity 0.2s, transform 0.2s;
+}
+.toast.show { opacity: 1; transform: translate(-50%, 0); }
+@media (prefers-reduced-motion: reduce) {
+  .toast, .switch input, .switch input::before { transition: none; }
+}
+</style>
+</head>
+<body>
+
+<div class="app">
+  <header class="top">
+    <h1><a href="../">Studio</a><span class="sep" aria-hidden="true">/</span>Carousel</h1>
+    <p class="spec">1080 × 1440 · grid 60 · margins 120</p>
+  </header>
+
+  <main class="layout">
+    <section class="stage" aria-label="Slides">
+      <div class="strip" id="strip"></div>
+      <div class="actions">
+        <label class="switch" for="guides"><input type="checkbox" id="guides"><span>Show grid and text boxes</span></label>
+        <button type="button" id="save-all" class="btn btn-primary">Save all</button>
+      </div>
+      <p id="warn" class="warn" hidden></p>
+    </section>
+
+    <section class="controls" aria-label="Carousel settings">
+      <div class="group">
+        <h2 class="group-title">Text</h2>
+        <div class="field">
+          <div class="field-head"><label for="label">Label</label><span class="meta">45 px · all caps · top</span></div>
+          <input type="text" id="label" autocomplete="off">
+          <p class="status" id="label-status"></p>
+        </div>
+
+        <div class="field">
+          <div class="field-head"><label for="markdown">Markdown</label><span class="meta">title 120 · heading 90 · text 60</span></div>
+          <textarea id="markdown" class="post" rows="12" spellcheck="true"></textarea>
+          <p class="status" id="cover-status"></p>
+          <p class="status" id="post-status"></p>
+          <p class="note"><code>#</code> is the cover title and the first paragraph is its subtitle. Every paragraph after that becomes a page, centered. A <code>##</code> heading goes at the top of the next page and moves that paragraph to the bottom. A paragraph too long for one page continues on the next, split between sentences.</p>
+        </div>
+
+        <div class="field">
+          <div class="field-head"><label for="footer1">Footer</label><span class="meta">30 px · bottom</span></div>
+          <input type="text" id="footer1" autocomplete="off" aria-label="Footer line 1">
+          <input type="text" id="footer2" autocomplete="off" aria-label="Footer line 2">
+        </div>
+      </div>
+
+      <div class="group">
+        <h2 class="group-title">Template</h2>
+
+        <div class="field">
+          <span class="field-label" id="body-font-label">Body</span>
+          <div class="seg" role="radiogroup" aria-labelledby="body-font-label">
+            <input type="radio" name="body-font" id="body-font-helvetica" value="helvetica"><label for="body-font-helvetica" class="f-sans">Helvetica</label>
+            <input type="radio" name="body-font" id="body-font-light" value="light"><label for="body-font-light" class="f-sans f-light">Helvetica Light</label>
+            <input type="radio" name="body-font" id="body-font-times" value="times"><label for="body-font-times" class="f-times" title="Times New Roman">Times</label>
+          </div>
+          <p class="status">Paragraphs on pages</p>
+        </div>
+
+        <div class="field">
+          <span class="field-label" id="other-font-label">Other</span>
+          <div class="seg" role="radiogroup" aria-labelledby="other-font-label">
+            <input type="radio" name="other-font" id="other-font-helvetica" value="helvetica"><label for="other-font-helvetica" class="f-sans">Helvetica</label>
+            <input type="radio" name="other-font" id="other-font-light" value="light"><label for="other-font-light" class="f-sans f-light">Helvetica Light</label>
+            <input type="radio" name="other-font" id="other-font-times" value="times"><label for="other-font-times" class="f-times" title="Times New Roman">Times</label>
+          </div>
+          <p class="status">Labels, footer, titles (# and ##) and the cover subtitle</p>
+        </div>
+
+        <div class="field">
+          <div class="field-head"><span class="field-label" id="bg-label">Background</span><span class="meta">all slides</span></div>
+          <div class="swatches" id="swatches" role="radiogroup" aria-labelledby="bg-label">
+            <div class="swatch"><input type="radio" name="bg" id="bg-black" value="black"><label for="bg-black"><span class="dot" style="background:#000000"></span>Black</label></div>
+            <div class="swatch"><input type="radio" name="bg" id="bg-white" value="white"><label for="bg-white"><span class="dot" style="background:#FFFFFF"></span>White</label></div>
+            <div class="swatch"><input type="radio" name="bg" id="bg-h0" value="h0"><label for="bg-h0"><span class="dot" data-hue="0" style="background:#F2E6E6"></span>0°</label></div>
+            <div class="swatch"><input type="radio" name="bg" id="bg-h30" value="h30"><label for="bg-h30"><span class="dot" data-hue="30" style="background:#F2ECE6"></span>30°</label></div>
+            <div class="swatch"><input type="radio" name="bg" id="bg-h60" value="h60"><label for="bg-h60"><span class="dot" data-hue="60" style="background:#F2F2E6"></span>60°</label></div>
+            <div class="swatch"><input type="radio" name="bg" id="bg-h90" value="h90"><label for="bg-h90"><span class="dot" data-hue="90" style="background:#ECF2E6"></span>90°</label></div>
+            <div class="swatch"><input type="radio" name="bg" id="bg-h120" value="h120"><label for="bg-h120"><span class="dot" data-hue="120" style="background:#E6F2E6"></span>120°</label></div>
+            <div class="swatch"><input type="radio" name="bg" id="bg-h150" value="h150"><label for="bg-h150"><span class="dot" data-hue="150" style="background:#E6F2EC"></span>150°</label></div>
+            <div class="swatch"><input type="radio" name="bg" id="bg-h180" value="h180"><label for="bg-h180"><span class="dot" data-hue="180" style="background:#E6F2F2"></span>180°</label></div>
+            <div class="swatch"><input type="radio" name="bg" id="bg-h210" value="h210"><label for="bg-h210"><span class="dot" data-hue="210" style="background:#E6ECF2"></span>210°</label></div>
+            <div class="swatch"><input type="radio" name="bg" id="bg-h240" value="h240"><label for="bg-h240"><span class="dot" data-hue="240" style="background:#E6E6F2"></span>240°</label></div>
+            <div class="swatch"><input type="radio" name="bg" id="bg-h270" value="h270"><label for="bg-h270"><span class="dot" data-hue="270" style="background:#ECE6F2"></span>270°</label></div>
+            <div class="swatch"><input type="radio" name="bg" id="bg-h300" value="h300"><label for="bg-h300"><span class="dot" data-hue="300" style="background:#F2E6F2"></span>300°</label></div>
+            <div class="swatch"><input type="radio" name="bg" id="bg-h330" value="h330"><label for="bg-h330"><span class="dot" data-hue="330" style="background:#F2E6EC"></span>330°</label></div>
+          </div>
+        </div>
+
+        <div class="field">
+          <div class="field-head"><label for="sat">Saturation</label><output class="meta" id="sat-value" for="sat">5</output></div>
+          <input type="range" id="sat" min="0" max="100" step="5">
+        </div>
+        <div class="field">
+          <div class="field-head"><label for="bri">Brightness</label><output class="meta" id="bri-value" for="bri">95</output></div>
+          <input type="range" id="bri" min="0" max="100" step="5">
+          <p class="status">Text turns white on dark colors.</p>
+        </div>
+
+        <div class="field">
+          <div class="field-head"><span class="field-label">Cover image</span><span class="meta">fills the cover · text turns white</span></div>
+          <div class="file-row">
+            <span class="file" id="img-name">No image</span>
+            <div class="row-actions">
+              <button type="button" class="btn btn-ghost btn-small" id="img-clear" hidden>Remove</button>
+              <label class="btn btn-ghost btn-small" for="img-input" id="img-pick">Add image</label>
+              <input type="file" id="img-input" class="visually-hidden" accept="image/*">
+            </div>
+          </div>
+        </div>
+
+        <label class="switch" for="fit"><input type="checkbox" id="fit"><span>Shrink cover text that doesn’t fit</span></label>
+      </div>
+    </section>
+  </main>
+</div>
+
+<div id="sheet" class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title" hidden>
+  <div class="sheet-card">
+    <p id="sheet-title">Press and hold each image, then choose Save to Photos.</p>
+    <div class="sheet-imgs" id="sheet-imgs"></div>
+    <button type="button" class="btn btn-ghost" id="sheet-close">Close</button>
+  </div>
+</div>
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+<script>
+(() => {
+  // ---- Template geometry, from the Illustrator exports (Cover.svg, Page.svg) ----
+  const W = 1080, H = 1440, GRID = 60, MARGIN = 120;
+  const PREVIEW_SCALE = 2 / 3;
+  const TITLE_GAP = 60; // one grid unit between the title and the subtitle
+
+  // Two font roles: "other" (labels, footer, # and ## titles, cover subtitle) and "body" (page paragraphs).
+  const FACES = {
+    helvetica: (s) => `400 ${s}px Helvetica, "Helvetica Neue", Arial, sans-serif`,
+    light:     (s) => `300 ${s}px Helvetica, "Helvetica Neue", Arial, sans-serif`,
+    times:     (s) => `400 ${s}px "Times New Roman", Times, serif`,
+  };
+  const FONTS = {
+    other: (s) => (FACES[state.otherFont] || FACES.helvetica)(s),
+    body:  (s) => (FACES[state.bodyFont] || FACES.times)(s),
+  };
+  const FOOTER = { x: 120, y: 1260, w: 840, h: 60, size: 30, font: "other", align: "bottom" };
+  const COVER = {
+    label:    { x: 120, y: 120, w: 840, h: 60,  size: 45,  font: "other", caps: true, align: "top" },
+    title:    { x: 120, y: 300, w: 840, h: 840, size: 120, font: "other", align: "top" },
+    subtitle: { x: 120, y: 300, w: 840, h: 840, size: 60,  font: "other", align: "bottom" },
+  };
+  const PAGE = {
+    label:   { x: 120, y: 120, w: 840, h: 60,  size: 45, font: "other", caps: true, align: "top" },
+    heading: { x: 120, y: 300, w: 840, h: 840, size: 90, font: "other", align: "top" },
+    body:    { x: 120, y: 300, w: 840, h: 840, size: 60, font: "body", align: "middle" },
+  };
+  const BODY_UNDER_HEADING = { ...PAGE.body, align: "bottom" };
+
+  // Backgrounds: black, white, or a hue every 30° at the chosen saturation and brightness (HSB).
+  function hsbHex(h, s, b) {
+    const f = (n) => {
+      const k = (n + h / 60) % 6;
+      return b - b * s * Math.max(0, Math.min(k, 4 - k, 1));
+    };
+    return "#" + [f(5), f(3), f(1)].map((v) => Math.round(v * 255).toString(16).padStart(2, "0")).join("").toUpperCase();
+  }
+  function bgColor() {
+    if (state.bg === "black") return "#000000";
+    if (state.bg === "white") return "#FFFFFF";
+    return hsbHex(parseInt(state.bg.slice(1), 10), state.sat / 100, state.bri / 100);
+  }
+  // Black or white text, whichever contrasts more with the background.
+  function inkFor(hex) {
+    const lin = (i) => {
+      const c = parseInt(hex.slice(i, i + 2), 16) / 255;
+      return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+    };
+    const L = 0.2126 * lin(1) + 0.7152 * lin(3) + 0.0722 * lin(5);
+    return (L + 0.05) / 0.05 >= 1.05 / (L + 0.05) ? "#000000" : "#FFFFFF";
+  }
+  const BG_IDS = ["black", "white", ...Array.from({ length: 12 }, (_, i) => "h" + i * 30)];
+
+  // ---- State (kept in this browser only) ----
+  const SAMPLE_MD = [
+    "# The Job Isn’t the Safe Bet Anymore",
+    "",
+    "Employment vs. building your own business.",
+    "",
+    "Paste your post here, the same Markdown you publish to Ghost from iA Writer. A paragraph with no heading sits centered on its page.",
+    "",
+    "## Headings",
+    "",
+    "A second-level heading goes at the top of the next page in the Other font, and its paragraph moves to the bottom.",
+    "",
+    "A paragraph too long for one page continues on the next, split between sentences.",
+  ].join("\n");
+  const DEFAULTS = {
+    markdown: SAMPLE_MD,
+    label: "Essay",
+    bg: "white",
+    sat: 5,
+    bri: 95,
+    otherFont: "helvetica",
+    bodyFont: "times",
+    footer1: "Mashaan",
+    footer2: "mashaan.com",
+    fit: false,
+    guides: false,
+  };
+  const STATE_KEY = "carousel:v3";
+  let state = { ...DEFAULTS };
+  try {
+    const saved = JSON.parse(localStorage.getItem(STATE_KEY) || "null");
+    if (saved && typeof saved === "object") {
+      state = { ...DEFAULTS, ...saved };
+      if (saved.sans && !saved.otherFont) state.otherFont = saved.sans; // older name for the same setting
+    } else {
+      const old = JSON.parse(localStorage.getItem("carousel:v2") || localStorage.getItem("cc01:state") || "null");
+      if (old && typeof old === "object") {
+        for (const k of ["label", "footer1", "footer2", "fit", "guides", "bodyFont"]) if (k in old) state[k] = old[k];
+        // Keep a pasted post, but not the old sample text.
+        if (typeof old.markdown === "string" && !old.markdown.includes("Paste your post here")) state.markdown = old.markdown;
+      }
+    }
+  } catch (e) {}
+  delete state.sans;
+  if (!FACES[state.bodyFont]) state.bodyFont = "times";       // Baskerville is gone
+  if (!FACES[state.otherFont]) state.otherFont = "helvetica"; // was "regular"
+  if (!BG_IDS.includes(state.bg)) state.bg = "white";
+  // Swap the previous built-in example for the new one; a pasted post is left alone.
+  if (typeof state.markdown === "string" && /A second-level heading (sets the label|goes at the top of the next page in the text font)/.test(state.markdown)) state.markdown = SAMPLE_MD;
+  const step5 = (v, d) => { const n = Math.round(Number(v) / 5) * 5; return n >= 0 && n <= 100 ? n : d; };
+  state.sat = step5(state.sat, 5);
+  state.bri = step5(state.bri, 95);
+  const persist = () => { try { localStorage.setItem(STATE_KEY, JSON.stringify(state)); } catch (e) {} };
+
+  // ---- Measurement ----
+  const mctx = document.createElement("canvas").getContext("2d");
+  let capCache = {};
+  function capRatio(font) {
+    if (capCache[font]) return capCache[font];
+    mctx.font = FONTS[font](200);
+    let r = mctx.measureText("H").actualBoundingBoxAscent / 200;
+    if (!(r > 0.5 && r < 0.9)) r = 0.7;
+    capCache[font] = r;
+    return r;
+  }
+
+  function wrap(ctx, text, maxW) {
+    const out = [];
+    if (!text) return out;
+    for (const para of text.replace(/\r/g, "").split("\n")) {
+      const words = para.split(" ").filter(Boolean);
+      if (!words.length) { out.push(""); continue; }
+      let line = "";
+      for (const w of words) {
+        const test = line ? line + " " + w : w;
+        if (ctx.measureText(test).width <= maxW) { line = test; continue; }
+        if (line) out.push(line);
+        if (ctx.measureText(w).width <= maxW) { line = w; continue; }
+        let piece = "";
+        for (const ch of Array.from(w)) {
+          if (piece && ctx.measureText(piece + ch).width > maxW) { out.push(piece); piece = ch; }
+          else piece += ch;
+        }
+        line = piece;
+      }
+      out.push(line);
+    }
+    while (out.length && out[out.length - 1] === "") out.pop();
+    return out;
+  }
+
+  // A text block runs from the cap top of its first line to the baseline of its last.
+  // Top: cap top on the box top. Bottom: last baseline on the box bottom. Middle: centered in the box.
+  function layoutText(box, text, opts = {}) {
+    const font = opts.font || box.font;
+    const room = opts.room != null ? opts.room : box.h;
+    const t = box.caps ? (text || "").toLocaleUpperCase() : (text || "");
+    const measure = (s) => {
+      const cap = capRatio(font) * s;
+      mctx.font = FONTS[font](s);
+      const lines = wrap(mctx, t, box.w);
+      return { size: s, cap, lines, font, block: lines.length ? cap + (lines.length - 1) * s : 0 };
+    };
+    let r = measure(box.size);
+    const maxLines = Math.max(0, Math.floor((room - r.cap) / box.size + 1e-6) + 1);
+    if (opts.fit && r.block > room + 0.5) {
+      const min = Math.round(box.size * 0.5);
+      for (let s = box.size - 1; s >= min; s--) {
+        r = measure(s);
+        if (r.block <= room + 0.5) break;
+      }
+    }
+    const n = r.lines.length;
+    let first;
+    if (box.align === "middle") first = box.y + (box.h - r.block) / 2 + r.cap;
+    else if (box.align === "bottom") first = box.y + box.h - (n - 1) * r.size;
+    else first = box.y + r.cap;
+    return { ...r, first, maxLines, over: r.block > room + 0.5 };
+  }
+
+  // ---- Markdown to blocks ----
+  function cleanInline(s) {
+    return s
+      .replace(/<!--[\s\S]*?-->/g, "")
+      .replace(/!\[[^\]]*\]\([^)]*\)/g, "")
+      .replace(/\[([^\]]+)\]\([^)]*\)/g, "$1")
+      .replace(/<(https?:[^>]+)>/g, "$1")
+      .replace(/<[^>]+>/g, "")
+      .replace(/`([^`]+)`/g, "$1")
+      .replace(/(\*\*|__)(.+?)\1/g, "$2")
+      .replace(/\*(?!\s)([^*]+?)\*/g, "$1")
+      .replace(/(^|[^\w])_(?!\s)([^_]+?)_(?=[^\w]|$)/g, "$1$2")
+      .replace(/~~(.+?)~~/g, "$1")
+      .replace(/\\([\\`*_{}\[\]()#+\-.!>])/g, "$1")
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+  function parseMarkdown(md) {
+    const blocks = [];
+    let text = (md || "").replace(/\r\n?/g, "\n");
+    const fm = text.match(/^---\n[\s\S]*?\n---\n/);
+    if (fm) text = text.slice(fm[0].length);
+    let cur = null, fence = false;
+    const flush = () => {
+      if (!cur) return;
+      const body = cur.type === "list" ? cur.lines.join("\n") : cur.lines.join(" ");
+      if (body.trim()) blocks.push({ type: "p", text: body.trim() });
+      cur = null;
+    };
+    for (const raw of text.split("\n")) {
+      if (/^\s*(```|~~~)/.test(raw)) { fence = !fence; flush(); continue; }
+      if (fence) continue;
+      const line = raw.trim();
+      if (!line) { flush(); continue; }
+      const h = line.match(/^(#{1,6})\s+(.*?)\s*#*\s*$/);
+      if (h) { flush(); blocks.push({ type: h[1].length === 1 ? "h1" : "h2", text: cleanInline(h[2]) }); continue; }
+      if (/^([-*_])(\s*\1){2,}$/.test(line)) { flush(); continue; }
+      if (/^!\[[^\]]*\]\([^)]*\)$/.test(line)) { flush(); continue; }
+      const li = line.match(/^([-*+]|(\d+)[.)])\s+(.*)$/);
+      if (li) {
+        if (cur && cur.type !== "list") flush();
+        if (!cur) cur = { type: "list", lines: [] };
+        cur.lines.push((li[2] ? li[2] + ". " : "") + cleanInline(li[3]));
+        continue;
+      }
+      const content = cleanInline(line.replace(/^>\s?/, ""));
+      if (!content) continue;
+      if (cur && cur.type === "list") flush();
+      if (!cur) cur = { type: "p", lines: [] };
+      cur.lines.push(content);
+    }
+    flush();
+    return blocks;
+  }
+
+  // ---- Pages ----
+  function linesFor(text) {
+    mctx.font = FONTS.body(PAGE.body.size);
+    return wrap(mctx, text, PAGE.body.w).length;
+  }
+  // Lines that fit in a given height: the block runs from the first cap top to the last baseline.
+  const linesIn = (height, cap, size) => (height < cap ? 0 : Math.floor((height - cap) / size + 1e-6) + 1);
+
+  // The first chunk may have less room (a heading page) than the ones after it.
+  function splitToFit(text, firstMax, restMax) {
+    if (linesFor(text) <= firstMax) return [text];
+    const chunks = [];
+    const limit = () => (chunks.length ? restMax : firstMax);
+    const isList = text.includes("\n");
+    const sep = isList ? "\n" : " ";
+    const units = isList
+      ? text.split("\n")
+      : (text.match(/[^.!?…]+(?:[.!?…]+["'”’)\]]*|$)\s*/g) || [text]).map((s) => s.trim()).filter(Boolean);
+    let cur = "";
+    for (const u of units) {
+      const test = cur ? cur + sep + u : u;
+      if (linesFor(test) <= limit()) { cur = test; continue; }
+      if (cur) { chunks.push(cur); cur = ""; }
+      if (linesFor(u) <= limit()) { cur = u; continue; }
+      let piece = "";
+      for (const w of u.split(" ")) {
+        const t2 = piece ? piece + " " + w : w;
+        if (piece && linesFor(t2) > limit()) { chunks.push(piece); piece = w; }
+        else piece = t2;
+      }
+      cur = piece;
+    }
+    if (cur) chunks.push(cur);
+    return chunks;
+  }
+
+  // Where the heading's last baseline lands, so the paragraph below it knows its room.
+  function headingLayout(text) {
+    return layoutText(PAGE.heading, text);
+  }
+  function roomUnderHeading(h) {
+    const lastBaseline = h.lines.length ? h.first + (h.lines.length - 1) * h.size : PAGE.heading.y;
+    return PAGE.body.y + PAGE.body.h - (lastBaseline + TITLE_GAP);
+  }
+  // First # = cover title. The first paragraph before any ## = subtitle. Everything else = pages.
+  // A second # is treated like a ## so it still shows up.
+  function parsePost(md) {
+    let title = "", subtitle = "", wantSubtitle = true;
+    const rest = [];
+    for (const b of parseMarkdown(md)) {
+      if (b.type === "h1" && !title) { title = b.text; continue; }
+      if (b.type === "p" && wantSubtitle) { subtitle = b.text; wantSubtitle = false; continue; }
+      wantSubtitle = false;
+      rest.push(b.type === "h1" ? { type: "h2", text: b.text } : b);
+    }
+    return { title, subtitle, rest };
+  }
+
+  // A ## heading sits at the top of the page that holds the paragraph right after it.
+  function buildPages(blocks) {
+    const box = PAGE.body;
+    const cap = capRatio("body") * box.size;
+    const maxLines = linesIn(box.h, cap, box.size);
+    const pages = [];
+    let heading = null;
+    let splits = 0;
+    const flushHeading = () => {
+      if (heading !== null) pages.push({ heading, body: "", part: 1, parts: 1 });
+      heading = null;
+    };
+    for (const b of blocks) {
+      if (b.type === "h2") { flushHeading(); heading = b.text; continue; }
+      let firstMax = maxLines;
+      if (heading !== null) {
+        firstMax = linesIn(roomUnderHeading(headingLayout(heading)), cap, box.size);
+        if (firstMax < 1) flushHeading(); // no room under a very long heading: it gets a page of its own
+      }
+      const parts = splitToFit(b.text, heading !== null ? firstMax : maxLines, maxLines);
+      if (parts.length > 1) splits++;
+      parts.forEach((p, i) => pages.push({ heading: i === 0 ? heading : null, body: p, part: i + 1, parts: parts.length }));
+      heading = null;
+    }
+    flushHeading();
+    return { pages, splits, maxLines };
+  }
+
+  // ---- Drawing ----
+  function drawText(ctx, box, r) {
+    ctx.font = FONTS[r.font](r.size);
+    r.lines.forEach((ln, i) => ctx.fillText(ln, box.x, r.first + i * r.size));
+  }
+  function drawGrid(ctx) {
+    ctx.save();
+    ctx.strokeStyle = "rgba(0, 144, 204, 0.16)";
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    for (let x = GRID; x < W; x += GRID) { ctx.moveTo(x, 0); ctx.lineTo(x, H); }
+    for (let y = GRID; y < H; y += GRID) { ctx.moveTo(0, y); ctx.lineTo(W, y); }
+    ctx.stroke();
+    ctx.strokeStyle = "rgba(0, 144, 204, 0.75)";
+    ctx.lineWidth = 2;
+    ctx.strokeRect(MARGIN, MARGIN, W - MARGIN * 2, H - MARGIN * 2);
+    ctx.restore();
+  }
+  function drawBox(ctx, box, over) {
+    ctx.save();
+    ctx.lineWidth = 3;
+    ctx.setLineDash([12, 8]);
+    ctx.strokeStyle = over ? "#E0352B" : "rgba(0, 144, 204, 0.95)";
+    ctx.strokeRect(box.x, box.y, box.w, box.h);
+    ctx.restore();
+  }
+  function begin(ctx, scale, bg, guides, image) {
+    ctx.setTransform(scale, 0, 0, scale, 0, 0);
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, W, H);
+    if (image) ctx.drawImage(image, 0, 0, W, H);
+    if (guides) drawGrid(ctx);
+    try { ctx.fontKerning = "normal"; } catch (e) {}
+    ctx.textAlign = "left";
+    ctx.textBaseline = "alphabetic";
+    ctx.fillStyle = image ? "#FFFFFF" : inkFor(bg);
+  }
+  const footerText = () => [state.footer1, state.footer2].filter((s) => s && s.trim()).join("\n");
+
+  let post = { title: "", subtitle: "", rest: [] };
+  let coverImage = null; // a 1080×1440 center-cropped canvas or image
+  function layoutCover() {
+    const label = layoutText(COVER.label, state.label, { fit: state.fit });
+    const subtitle = layoutText(COVER.subtitle, post.subtitle, { fit: state.fit });
+    const subCapTop = subtitle.lines.length ? subtitle.first - subtitle.cap : COVER.title.y + COVER.title.h + TITLE_GAP;
+    const room = subCapTop - TITLE_GAP - COVER.title.y;
+    const title = layoutText(COVER.title, post.title, { fit: state.fit, room });
+    const footer = layoutText(FOOTER, footerText());
+    return { label, title, subtitle, footer, collides: subtitle.lines.length > 0 && title.over };
+  }
+  function drawCover(ctx, scale, guides) {
+    const L = layoutCover();
+    begin(ctx, scale, bgColor(), guides, coverImage);
+    drawText(ctx, COVER.label, L.label);
+    drawText(ctx, COVER.title, L.title);
+    drawText(ctx, COVER.subtitle, L.subtitle);
+    drawText(ctx, FOOTER, L.footer);
+    if (guides) {
+      drawBox(ctx, COVER.label, L.label.over);
+      drawBox(ctx, COVER.title, L.title.over || L.subtitle.over);
+      drawBox(ctx, FOOTER, L.footer.over);
+    }
+    return L;
+  }
+  // With a heading: heading top, paragraph bottom. Without: paragraph centered.
+  function drawPage(ctx, scale, page, guides) {
+    const label = layoutText(PAGE.label, state.label);
+    const heading = page.heading ? headingLayout(page.heading) : null;
+    const body = heading
+      ? layoutText(BODY_UNDER_HEADING, page.body, { room: roomUnderHeading(heading) })
+      : layoutText(PAGE.body, page.body);
+    const footer = layoutText(FOOTER, footerText());
+    begin(ctx, scale, bgColor(), guides, null);
+    drawText(ctx, PAGE.label, label);
+    if (heading) drawText(ctx, PAGE.heading, heading);
+    drawText(ctx, PAGE.body, body);
+    drawText(ctx, FOOTER, footer);
+    const over = body.lines.length > 0 && body.over;
+    if (guides) {
+      drawBox(ctx, PAGE.label, label.over);
+      drawBox(ctx, PAGE.body, over || (heading && heading.over));
+      drawBox(ctx, FOOTER, footer.over);
+    }
+    return { label, heading, body, footer, over, headingOver: !!(heading && heading.over) };
+  }
+
+  // ---- UI ----
+  const $ = (id) => document.getElementById(id);
+  const strip = $("strip");
+  let cards = [];
+  let slides = [{ kind: "cover" }];
+
+  function makeCard(i) {
+    const fig = document.createElement("figure");
+    fig.className = "slide";
+    const frame = document.createElement("div");
+    frame.className = "frame";
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.round(W * PREVIEW_SCALE);
+    canvas.height = Math.round(H * PREVIEW_SCALE);
+    canvas.setAttribute("role", "img");
+    frame.appendChild(canvas);
+    const cap = document.createElement("figcaption");
+    const txt = document.createElement("div");
+    txt.className = "slide-text";
+    const name = document.createElement("span");
+    name.className = "slide-name";
+    const note = document.createElement("span");
+    note.className = "slide-note";
+    txt.append(name, note);
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "btn btn-ghost btn-small";
+    btn.id = "save-slide-" + (i + 1);
+    btn.textContent = "Save";
+    btn.addEventListener("click", () => saveOne(i, btn));
+    cap.append(txt, btn);
+    fig.append(frame, cap);
+    strip.appendChild(fig);
+    return { fig, canvas, ctx: canvas.getContext("2d"), name, note, btn };
+  }
+  function ensureCards(n) {
+    while (cards.length < n) cards.push(makeCard(cards.length));
+    while (cards.length > n) cards.pop().fig.remove();
+  }
+
+  const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
+
+  function render() {
+    capCache = {};
+    post = parsePost(state.markdown);
+    const { pages, splits } = buildPages(post.rest);
+    slides = [{ kind: "cover" }, ...pages.map((p) => ({ kind: "page", ...p }))];
+    ensureCards(slides.length);
+
+    const issues = [];
+    let cover;
+    slides.forEach((s, i) => {
+      const c = cards[i];
+      const num = String(i + 1).padStart(2, "0");
+      if (s.kind === "cover") {
+        cover = drawCover(c.ctx, PREVIEW_SCALE, state.guides);
+        c.name.textContent = `${num} · Cover`;
+        const bad = cover.collides ? "Title runs into the subtitle" : (cover.title.over || cover.label.over || cover.subtitle.over) ? "Text runs past its box" : "";
+        c.note.textContent = bad || "Label, title, subtitle";
+        c.note.classList.toggle("is-over", !!bad);
+        c.canvas.setAttribute("aria-label", `Cover: ${post.title}`);
+        if (bad) issues.push(`Cover: ${bad.toLowerCase()}.`);
+      } else {
+        const r = drawPage(c.ctx, PREVIEW_SCALE, s, state.guides);
+        c.name.textContent = `${num} · Page`;
+        const bad = r.headingOver ? "Heading runs past the box"
+          : r.over ? (s.heading ? "Text runs into the heading" : "Text runs past the body box") : "";
+        const n = r.body.lines.length;
+        let note = s.parts > 1 ? `Part ${s.part} of ${s.parts}` : (n ? plural(n, "line", "lines") : "No paragraph");
+        if (s.heading) note = `Heading · ${note}`;
+        c.note.textContent = bad || note;
+        c.note.classList.toggle("is-over", !!bad);
+        c.canvas.setAttribute("aria-label", `Page ${i}: ${[s.heading, s.body].filter(Boolean).join(". ")}`);
+        if (bad) issues.push(`Slide ${num}: ${bad.toLowerCase()}.`);
+      }
+    });
+
+    // Cover field statuses
+    const setStatus = (id, text, over) => { const el = $(id); el.textContent = text; el.classList.toggle("is-over", !!over); };
+    const lbl = cover.label;
+    let labelText;
+    if (!lbl.lines.length) labelText = "Empty";
+    else if (lbl.over) labelText = `${lbl.lines.length} lines · box fits 1`;
+    else if (lbl.size < COVER.label.size) labelText = `1 line · shrunk to ${lbl.size} px`;
+    else labelText = "1 of 1 line";
+    setStatus("label-status", labelText, lbl.over);
+    const t = cover.title, st = cover.subtitle;
+    let titleText;
+    if (!t.lines.length) titleText = "Title: none yet, start with # Title";
+    else if (t.over) titleText = cover.collides
+      ? `Title: ${t.lines.length} lines, runs into the subtitle (fits ${t.maxLines})`
+      : `Title: ${t.lines.length} lines, box fits ${t.maxLines}`;
+    else if (t.size < COVER.title.size) titleText = `Title: ${plural(t.lines.length, "line", "lines")}, shrunk to ${t.size} px`;
+    else titleText = `Title: ${t.lines.length} of ${t.maxLines} lines`;
+    const subText = st.lines.length
+      ? `Subtitle: ${plural(st.lines.length, "line", "lines")}` + (st.size < COVER.subtitle.size ? `, shrunk to ${st.size} px` : "")
+      : "Subtitle: none yet";
+    setStatus("cover-status", `${titleText} · ${subText}`, t.over || st.over);
+
+    // Post status
+    const pageCount = slides.length - 1;
+    let count = pageCount
+      ? `1 cover + ${plural(pageCount, "page", "pages")} = ${plural(slides.length, "slide", "slides")}`
+      : "No pages yet. Paragraphs after the subtitle become pages.";
+    if (splits) count += ` · ${plural(splits, "paragraph", "paragraphs")} split across pages`;
+    setStatus("post-status", count, false);
+
+    const warn = $("warn");
+    warn.textContent = issues.join(" ");
+    warn.hidden = !issues.length;
+    $("save-all").textContent = `Save all ${slides.length}`;
+  }
+  let raf = 0;
+  function schedule() {
+    if (raf) return;
+    raf = requestAnimationFrame(() => { raf = 0; render(); });
+  }
+
+  // Inputs
+  for (const k of ["label", "markdown", "footer1", "footer2"]) {
+    const el = $(k);
+    el.value = state[k];
+    el.addEventListener("input", () => { state[k] = el.value; persist(); schedule(); });
+  }
+  const bindRadios = (name, key, onChange) => {
+    document.querySelectorAll(`input[name="${name}"]`).forEach((r) => {
+      r.checked = r.value === state[key];
+      r.addEventListener("change", () => {
+        if (!r.checked) return;
+        state[key] = r.value;
+        persist();
+        if (onChange) onChange(r.value);
+        schedule();
+      });
+    });
+  };
+  bindRadios("bg", "bg");
+  bindRadios("body-font", "bodyFont");
+  bindRadios("other-font", "otherFont");
+  for (const k of ["fit", "guides"]) {
+    const el = $(k);
+    el.checked = !!state[k];
+    el.addEventListener("change", () => { state[k] = el.checked; persist(); schedule(); });
+  }
+
+  // Saturation and brightness, in steps of 5
+  function paintSwatches() {
+    document.querySelectorAll("#swatches .dot[data-hue]").forEach((d) => {
+      d.style.background = hsbHex(Number(d.dataset.hue), state.sat / 100, state.bri / 100);
+    });
+    $("sat-value").textContent = state.sat;
+    $("bri-value").textContent = state.bri;
+  }
+  for (const k of ["sat", "bri"]) {
+    const el = $(k);
+    el.value = state[k];
+    el.addEventListener("input", () => {
+      state[k] = step5(el.value, state[k]);
+      persist();
+      paintSwatches();
+      schedule();
+    });
+  }
+  paintSwatches();
+
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { capCache = {}; schedule(); });
+
+  // ---- Cover image: center-cropped to 1080×1440, kept in this browser ----
+  const IMG_KEY = "carousel:cover-image";
+  function setImageUI(name) {
+    const el = $("img-name");
+    el.textContent = name || "No image";
+    el.classList.toggle("is-loaded", !!name);
+    $("img-clear").hidden = !name;
+    $("img-pick").textContent = name ? "Replace" : "Add image";
+  }
+  function loadImage(src) {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.onerror = reject;
+      img.src = src;
+    });
+  }
+  async function onImageFile(file) {
+    if (!file) return;
+    const url = URL.createObjectURL(file);
+    try {
+      const img = await loadImage(url);
+      const c = document.createElement("canvas");
+      c.width = W;
+      c.height = H;
+      const x = c.getContext("2d");
+      const s = Math.max(W / img.naturalWidth, H / img.naturalHeight);
+      const dw = img.naturalWidth * s, dh = img.naturalHeight * s;
+      x.drawImage(img, (W - dw) / 2, (H - dh) / 2, dw, dh);
+      coverImage = c;
+      setImageUI(file.name);
+      schedule();
+      try {
+        localStorage.setItem(IMG_KEY, JSON.stringify({ name: file.name, data: c.toDataURL("image/jpeg", 0.9) }));
+      } catch (e) {
+        try { localStorage.removeItem(IMG_KEY); } catch (e2) {}
+        toast("Image added for this visit only. This browser couldn’t store it.");
+      }
+    } catch (e) {
+      toast("That file couldn’t be opened as an image.");
+    } finally {
+      URL.revokeObjectURL(url);
+    }
+  }
+  $("img-input").addEventListener("change", (e) => { onImageFile(e.target.files && e.target.files[0]); e.target.value = ""; });
+  $("img-clear").addEventListener("click", () => {
+    coverImage = null;
+    try { localStorage.removeItem(IMG_KEY); } catch (e) {}
+    setImageUI("");
+    schedule();
+  });
+  setImageUI("");
+  (async () => {
+    try {
+      const raw = localStorage.getItem(IMG_KEY);
+      if (!raw) return;
+      const { name, data } = JSON.parse(raw);
+      coverImage = await loadImage(data);
+      setImageUI(name);
+      schedule();
+    } catch (e) {}
+  })();
+
+  // Toast
+  let toastTimer = 0;
+  function toast(msg) {
+    const el = $("toast");
+    el.textContent = msg;
+    el.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => el.classList.remove("show"), 3000);
+  }
+
+  // ---- Export ----
+  // Phones: the share sheet (Save Image / Save to Photos). Computers: a normal download, with a ZIP for Save all.
+  const isTouch = window.matchMedia && window.matchMedia("(pointer: coarse)").matches;
+
+  function slug() {
+    const base = (post.title || "")
+      .toLowerCase()
+      .normalize("NFKD").replace(/[̀-ͯ]/g, "")
+      .replace(/['’]/g, "")
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 50)
+      .replace(/-+$/g, "");
+    return base || "carousel";
+  }
+  const fileFor = (i) => `${slug()}-${String(i + 1).padStart(2, "0")}.jpg`;
+
+  function renderBlob(slide) {
+    const c = document.createElement("canvas");
+    c.width = W;
+    c.height = H;
+    const ctx = c.getContext("2d");
+    if (slide.kind === "cover") drawCover(ctx, 1, false);
+    else drawPage(ctx, 1, slide, false);
+    return new Promise((resolve, reject) =>
+      c.toBlob((b) => (b ? resolve(b) : reject(new Error("encode"))), "image/jpeg", 0.95));
+  }
+
+  function download(blob, name) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = name;
+    a.rel = "noopener";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 4000);
+  }
+
+  function canShareFiles(fileObjs) {
+    try { return isTouch && !!navigator.canShare && navigator.canShare({ files: fileObjs }); }
+    catch (e) { return false; }
+  }
+
+  let sheetUrls = [];
+  function showSheet(files) {
+    closeSheet(true);
+    const box = $("sheet-imgs");
+    for (const f of files) {
+      const url = URL.createObjectURL(f.blob);
+      sheetUrls.push(url);
+      const img = document.createElement("img");
+      img.src = url;
+      img.alt = f.name;
+      box.appendChild(img);
+    }
+    $("sheet-title").textContent = files.length > 1
+      ? "Press and hold each image, then choose Save to Photos."
+      : "Press and hold the image, then choose Save to Photos.";
+    $("sheet").hidden = false;
+    $("sheet-close").focus();
+  }
+  function closeSheet(silent) {
+    $("sheet").hidden = true;
+    $("sheet-imgs").replaceChildren();
+    sheetUrls.forEach((u) => URL.revokeObjectURL(u));
+    sheetUrls = [];
+    if (!silent) $("save-all").focus();
+  }
+  $("sheet-close").addEventListener("click", () => closeSheet());
+  $("sheet").addEventListener("click", (e) => { if (e.target === $("sheet")) closeSheet(); });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !$("sheet").hidden) closeSheet(); });
+
+  // Hand finished JPEGs to the person: share sheet on phones, download on computers.
+  async function deliver(files, zipName) {
+    if (isTouch) {
+      const fileObjs = files.map((f) => new File([f.blob], f.name, { type: "image/jpeg" }));
+      if (canShareFiles(fileObjs)) {
+        try {
+          await navigator.share({ files: fileObjs });
+          return;
+        } catch (err) {
+          if (err && err.name === "AbortError") { toast("Save canceled"); return; }
+          // Share was blocked (for example, it took too long after the tap): fall back to press-and-hold.
+        }
+      }
+      showSheet(files);
+      return;
+    }
+    if (files.length === 1) {
+      download(files[0].blob, files[0].name);
+      toast(`Downloaded ${files[0].name}`);
+      return;
+    }
+    if (typeof window.JSZip === "function") {
+      const zip = new window.JSZip();
+      files.forEach((f) => zip.file(f.name, f.blob));
+      const zipBlob = await zip.generateAsync({ type: "blob", compression: "STORE" });
+      download(zipBlob, zipName);
+      toast(`Downloaded ${plural(files.length, "slide", "slides")} as a ZIP`);
+      return;
+    }
+    // ZIP library didn't load: download the slides one by one.
+    for (const f of files) {
+      download(f.blob, f.name);
+      await new Promise((r) => setTimeout(r, 250));
+    }
+    toast(`Downloaded ${plural(files.length, "slide", "slides")}`);
+  }
+
+  async function saveOne(i, btn) {
+    const slide = slides[i];
+    if (!slide) return;
+    btn.disabled = true;
+    try {
+      const blob = await renderBlob(slide);
+      await deliver([{ name: fileFor(i), blob }], `${slug()}.zip`);
+    } catch (e) {
+      toast("The JPEG couldn’t be created. Try again.");
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  const saveAllBtn = $("save-all");
+  saveAllBtn.addEventListener("click", async () => {
+    saveAllBtn.disabled = true;
+    const label = saveAllBtn.textContent;
+    saveAllBtn.textContent = "Preparing…";
+    try {
+      const list = slides.slice();
+      const files = [];
+      for (let i = 0; i < list.length; i++) files.push({ name: fileFor(i), blob: await renderBlob(list[i]) });
+      await deliver(files, `${slug()}-carousel.zip`);
+    } catch (e) {
+      toast("The slides couldn’t be created. Try again.");
+    } finally {
+      saveAllBtn.disabled = false;
+      saveAllBtn.textContent = label;
+    }
+  });
+
+  // ---- Start ----
+  render();
+})();
+</script>
+
+</body>
+</html>
